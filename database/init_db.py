@@ -18,8 +18,9 @@ class User(Base):
     __tablename__ = 'users'
     
     tg_id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
-    diary: Mapped[list] = mapped_column(JSON)
+    diary: Mapped[list] = mapped_column(JSON, nullable=True)
 
 async def init_database():
     async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
