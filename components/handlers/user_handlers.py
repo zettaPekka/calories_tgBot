@@ -8,7 +8,7 @@ from components.keyboards.user_kb import start_kb, add_food_kb, back_kb
 from components.states.user_states import SendingFood
 from ai_api.answer import answer_to_text_prompt, answer_to_view_prompt, answer_to_voice_prompt
 from ai_api.data_processing import formatting_data
-from database.crud import add_user
+from database.crud import add_user, add_food
 
 
 router = Router()
@@ -64,7 +64,7 @@ async def start(message: Message, state: FSMContext):
         res = await answer_to_voice_prompt(message=message)
         res = await formatting_data(res)
         if res:
-            answer_text = f'Калории:  {res['calories']}\nЖиры: {res['fats']}\nБелки: {res['proteins']}\nУглеводы: {res['carbohydrates']}'
+            answer_text = f'Калории: {res['calories']}\nЖиры: {res['fats']}\nБелки: {res['proteins']}\nУглеводы: {res['carbohydrates']}'
             await message.answer(answer_text, reply_markup=add_food_kb)
             await state.clear()
         else:
@@ -78,3 +78,6 @@ async def start(message: Message, state: FSMContext):
 async def save_food(callback: CallbackQuery):
     await callback.answer()
     await callback.message.edit_text('Успешно сохранено!', reply_markup=back_kb)
+    callories = callback.message.text.split(' ')
+    callories = int(callories[2][:-5])
+    await add_food(tg_id=callback.message.chat.id, calories=callories)
