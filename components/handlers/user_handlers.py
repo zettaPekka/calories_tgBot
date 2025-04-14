@@ -4,7 +4,7 @@ from aiogram.filters import Command, CommandStart
 from aiogram.fsm.context import FSMContext
 
 from core.init_bot import bot
-from components.keyboards.user_kb import start_kb
+from components.keyboards.user_kb import start_kb, add_food_kb, back_kb
 from components.states.user_states import SendingFood
 from ai_api.answer import answer_to_text_prompt, answer_to_view_prompt, answer_to_voice_prompt
 from ai_api.data_processing import formatting_data
@@ -35,10 +35,12 @@ async def start(message: Message, state: FSMContext):
         res = await answer_to_text_prompt(message_text=message.text)
         res = await formatting_data(res)
         if res:
-            await message.answer(res)
+            answer_text = f'Калории:  {res['calories']}\nЖиры: {res['fats']}\nБелки: {res['proteins']}\nУглеводы: {res['carbohydrates']}'
+            await message.answer(answer_text)
             await state.clear()
         else:
             await message.answer('Ошибка, возможно не правильное описание блюда. Попробуйте еще раз')
+            await state.set_state(SendingFood.sending)
         await waiting_message.delete()
     elif message.content_type == ContentType.PHOTO:
         waiting_message = await message.answer('Генерируется...')
@@ -46,10 +48,12 @@ async def start(message: Message, state: FSMContext):
         res = await answer_to_view_prompt(message=message)
         res = await formatting_data(res)
         if res:
-            await message.answer(res)
+            answer_text = f'Калории:  {res['calories']}\nЖиры: {res['fats']}\nБелки: {res['proteins']}\nУглеводы: {res['carbohydrates']}'
+            await message.answer(answer_text)
             await state.clear()
         else:
             await message.answer('Ошибка, возможно не правильное описание блюда. Попробуйте еще раз')
+            await state.set_state(SendingFood.sending)
         await waiting_message.delete()
     elif message.content_type == ContentType.VOICE:
         waiting_message = await message.answer('Генерируется...')
@@ -57,10 +61,18 @@ async def start(message: Message, state: FSMContext):
         res = await answer_to_voice_prompt(message=message)
         res = await formatting_data(res)
         if res:
-            await message.answer(res)
+            answer_text = f'Калории:  {res['calories']}\nЖиры: {res['fats']}\nБелки: {res['proteins']}\nУглеводы: {res['carbohydrates']}'
+            await message.answer(answer_text)
             await state.clear()
         else:
             await message.answer('Ошибка, возможно не правильное описание блюда. Попробуйте еще раз')
+            await state.set_state(SendingFood.sending)
         await waiting_message.delete()
     else:
         await message.answer('Бот принимает только текст фото или гс')
+
+@router.callback_query(F.data == 'save_food')
+async def save_food(callback: CallbackQuery):
+    await callback.answer()
+    await callback.message.edit_text('Успешно сохранено!', reply_markup=back_kb)
+    
