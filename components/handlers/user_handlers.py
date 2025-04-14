@@ -78,9 +78,9 @@ async def start(message: Message, state: FSMContext):
 async def save_food(callback: CallbackQuery):
     await callback.answer()
     await callback.message.edit_text('Успешно сохранено!', reply_markup=back_kb)
-    callories = callback.message.text.split(' ')
-    callories = int(callories[2][:-5])
-    await add_food(tg_id=callback.message.chat.id, calories=callories)
+    calories = callback.message.text.split(' ')
+    calories = int(calories[2][:-5])
+    await add_food(tg_id=callback.message.chat.id, calories=calories)
 
 @router.callback_query(F.data == 'back')
 async def back(callback: CallbackQuery, state: FSMContext):
