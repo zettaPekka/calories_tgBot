@@ -33,3 +33,8 @@ async def add_food(tg_id: int, calories: int):
             user.diary[today] = calories
 
         await session.commit()
+
+async def get_diary(tg_id: int):
+    async with async_session() as session:
+        user = await session.get(User, tg_id)
+        return user.diary
