@@ -1,0 +1,66 @@
+from aiogram import Router, F
+from aiogram.types import Message, CallbackQuery, ContentType
+from aiogram.filters import Command, CommandStart
+from aiogram.fsm.context import FSMContext
+
+from core.init_bot import bot
+from components.keyboards.user_kb import start_kb
+from components.states.user_states import SendingFood
+from ai_api.answer import answer_to_text_prompt, answer_to_view_prompt, answer_to_voice_prompt
+from ai_api.data_processing import formatting_data
+
+router = Router()
+
+
+@router.message(CommandStart())
+async def start(message: Message):
+    await message.answer('привет ты можешь отправь что ты кушал сегодня (текст, гс, фото) по кнопке ниже',
+                            reply_markup=start_kb)
+
+@router.callback_query(F.data == 'send_food')
+async def send_food(callback: CallbackQuery, state: FSMContext):
+    current_state = await state.get_state()
+    if current_state == 'SendingFood:waiting':
+        await callback.message.answer('Дождитесь прошлого запроса')
+    else:
+        await callback.answer()
+        await callback.message.answer('скинь еду')
+        await state.set_state(SendingFood.sending)
+
+@router.message(SendingFood.sending)
+async def start(message: Message, state: FSMContext):
+    if message.content_type == ContentType.TEXT:
+        waiting_message = await message.answer('Генерируется...')
+        await state.set_state(SendingFood.waiting)
+        res = await answer_to_text_prompt(message_text=message.text)
+        res = await formatting_data(res)
+        if res:
+            await message.answer(res)
+            await state.clear()
+        else:
+            await message.answer('Ошибка, возможно не правильное описание блюда. Попробуйте еще раз')
+        await waiting_message.delete()
+    elif message.content_type == ContentType.PHOTO:
+        waiting_message = await message.answer('Генерируется...')
+        await state.set_state(SendingFood.waiting)
+        res = await answer_to_view_prompt(message=message)
+        res = await formatting_data(res)
+        if res:
+            await message.answer(res)
+            await state.clear()
+        else:
+            await message.answer('Ошибка, возможно не правильное описание блюда. Попробуйте еще раз')
+        await waiting_message.delete()
+    elif message.content_type == ContentType.VOICE:
+        waiting_message = await message.answer('Генерируется...')
+        await state.set_state(SendingFood.waiting)
+        res = await answer_to_voice_prompt(message=message)
+        res = await formatting_data(res)
+        if res:
+            await message.answer(res)
+            await state.clear()
+        else:
+            await message.answer('Ошибка, возможно не правильное описание блюда. Попробуйте еще раз')
+        await waiting_message.delete()
+    else:
+        await message.answer('Бот принимает только текст фото или гс')
