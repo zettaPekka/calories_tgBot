@@ -27,7 +27,7 @@ async def send_food(callback: CallbackQuery, state: FSMContext):
         await callback.message.answer('Дождитесь прошлого запроса')
     else:
         await callback.answer()
-        await callback.message.answer('скинь еду')
+        await callback.message.answer('пришлите еду', reply_markup=back_kb)
         await state.set_state(SendingFood.sending)
 
 @router.message(SendingFood.sending)
@@ -81,3 +81,10 @@ async def save_food(callback: CallbackQuery):
     callories = callback.message.text.split(' ')
     callories = int(callories[2][:-5])
     await add_food(tg_id=callback.message.chat.id, calories=callories)
+
+@router.callback_query(F.data == 'back')
+async def back(callback: CallbackQuery, state: FSMContext):
+    await callback.answer()
+    await callback.message.edit_text('привет ты можешь отправь что ты кушал сегодня (текст, гс, фото) по кнопке ниже',
+                            reply_markup=start_kb)
+    await state.clear()
