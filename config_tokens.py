@@ -1,0 +1,1 @@
+MISTRAL_API_KEYS = ['mIOzi3Inf1gRUfrhSLayesMdj6tXEE6B']
